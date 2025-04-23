@@ -3,8 +3,6 @@ pragma solidity ^0.8.0;
 
 interface IFinancialBondMetadata {
 
-    event CouponPayment(uint256 indexed couponRate, uint256 indexed faceValue, uint256 indexed totalSupply);
-
     function isin() external view returns(string memory);
 
     function name() external view returns(string memory);
@@ -25,5 +23,5 @@ interface IFinancialBondMetadata {
 
     function nextCoupon() external view returns(uint256);
 
-    function accumulatedCouponIncome() external view returns(uint256);
+    function accuredInterest() external view returns(uint256);
 }

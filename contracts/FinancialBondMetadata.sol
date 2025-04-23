@@ -60,7 +60,7 @@ abstract contract FinancialBondMetadata is IFinancialBondMetadata {
         return _previousCoupon + 31536000 / _couponFrequency;
     }
 
-    function accumulatedCouponIncome() external view returns(uint256) {
+    function accuredInterest() external view returns(uint256) {
         return (_faceValue / 10000 * _couponRate * (block.timestamp - _previousCoupon) / (31536000 / _couponFrequency));
     }
 }

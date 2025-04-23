@@ -21,6 +21,8 @@ interface IFinancialBond {
     */
     event Approval(address indexed _owner, address indexed _spender, uint256 _amount);
 
+    event CouponPayment(uint256 indexed couponRate, uint256 indexed faceValue, uint256 indexed totalSupply);
+
     // setter functions
     /**
     * @notice Authorizes `_spender` account to manage `_amount`of their bond tokens
@@ -58,4 +60,6 @@ interface IFinancialBond {
     * @param _amount amount of bond tokens to transfer.
     */
     function transferFrom(address _from, address _to, uint256 _amount) external returns(bool);
+
+    function couponPayment() external payable returns(bool);
 }
