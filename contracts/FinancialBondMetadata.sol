@@ -6,7 +6,7 @@ import {IFinancialBondMetadata} from "../interfaces/IFinancialBondMetadata.sol";
 abstract contract FinancialBondMetadata is IFinancialBondMetadata {
     address public issuer;
 
-    uint256 _denomination;
+    uint256 _faceValue;
     uint256 _totalSupply;
 
     uint256 _issueDate;
@@ -28,8 +28,8 @@ abstract contract FinancialBondMetadata is IFinancialBondMetadata {
         return _name;
     }
 
-    function denomination() external view returns(uint256) {
-        return _denomination;
+    function faceValue() external view returns(uint256) {
+        return _faceValue;
     }
     
     function totalSupply() external view returns(uint256) {
@@ -61,6 +61,6 @@ abstract contract FinancialBondMetadata is IFinancialBondMetadata {
     }
 
     function accumulatedCouponIncome() external view returns(uint256) {
-        return (_denomination / 10000 * _couponRate * (31536000 / _couponFrequency - block.timestamp) / (31536000 / _couponFrequency));
+        return (_faceValue / 10000 * _couponRate * (block.timestamp - _previousCoupon) / (31536000 / _couponFrequency));
     }
 }

@@ -20,7 +20,7 @@ interface IFinancialBond {
     *        Or amount of bond tokens to decrease allowance from `_spender`
     */
     event Approval(address indexed _owner, address indexed _spender, uint256 _amount);
-    
+
     // setter functions
     /**
     * @notice Authorizes `_spender` account to manage `_amount`of their bond tokens

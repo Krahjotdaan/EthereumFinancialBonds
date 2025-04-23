@@ -8,11 +8,12 @@ import {InvestorsStorage} from "./InvestorsStorage.sol";
 contract FinancialBond is InvestorsStorage, FinancialBondMetadata, IFinancialBond {
 
     uint256 public _remainingCoupons;
+    bool public _isMatured = false;
 
     constructor(
         string memory isin_,
         string memory name_,
-        uint256 denomination_, 
+        uint256 faceValue_, 
         uint256 totalSupply_,
         uint256 couponRate_, 
         uint256 couponFrequency_,
@@ -21,7 +22,7 @@ contract FinancialBond is InvestorsStorage, FinancialBondMetadata, IFinancialBon
         issuer = msg.sender;
         _isin = isin_;
         _name = name_;
-        _denomination = denomination_;
+        _faceValue = faceValue_;
         _totalSupply = totalSupply_;
         _issueDate = block.timestamp;
         _maturityDate = _issueDate + (31536000 / couponFrequency_ * totalCoupons_);
@@ -30,9 +31,12 @@ contract FinancialBond is InvestorsStorage, FinancialBondMetadata, IFinancialBon
         _couponFrequency = couponFrequency_;
         _previousCoupon = _issueDate;
         _remainingCoupons = totalCoupons_;
+
+        balances[msg.sender] = _totalSupply;
     }
 
     function approve(address spender, uint256 amount) external returns(bool) {
+        require(!_isMatured, "Financial bond: already matured");
         require(amount > 0, "Financial bond: amount must be greater 0");
         allowance[msg.sender][spender] = amount;
 
@@ -42,6 +46,7 @@ contract FinancialBond is InvestorsStorage, FinancialBondMetadata, IFinancialBon
     }
 
     function increaseAllowance(address spender, uint256 amount) external returns(bool) {
+        require(!_isMatured, "Financial bond: already matured");
         require(amount > 0, "Financial bond: amount must be greater 0");
         allowance[msg.sender][spender] += amount;
 
@@ -51,6 +56,7 @@ contract FinancialBond is InvestorsStorage, FinancialBondMetadata, IFinancialBon
     }
 
     function decreaseAllowance(address spender, uint256 amount) external returns(bool) {
+        require(!_isMatured, "Financial bond: already matured");
         require(amount > 0, "Financial bond: amount must be greater to 0");
         require(amount <= allowance[msg.sender][spender], "Financial bond: amount must be lesser or equal to current allowance");
         allowance[msg.sender][spender] -= amount;
@@ -61,6 +67,7 @@ contract FinancialBond is InvestorsStorage, FinancialBondMetadata, IFinancialBon
     }
 
     function transfer(address _to, uint256 _amount) external returns(bool) {
+        require(!_isMatured, "Financial bond: already matured");
         require(_amount > 0, "Financial bond: amount must be greater to 0");
         require(balances[msg.sender] >= _amount, "Financial bond: not enough tokens");
 
@@ -79,6 +86,7 @@ contract FinancialBond is InvestorsStorage, FinancialBondMetadata, IFinancialBon
     }
 
     function transferFrom(address _from, address _to, uint256 _amount) external returns(bool) {
+        require(!_isMatured, "Financial bond: already matured");
         require(_amount > 0, "Financial bond: amount must be greater to 0");
         require(allowance[_from][msg.sender] >= _amount, "Financial bond: not enough allowance to transfer");
         require(balances[_from] >= _amount, "Financial bond: not enough tokens");
@@ -100,11 +108,20 @@ contract FinancialBond is InvestorsStorage, FinancialBondMetadata, IFinancialBon
     }
 
     function couponPayment() external payable returns(bool) {
+        require(!_isMatured, "Financial bond: already matured");
         require(msg.sender == issuer, "Financial bond: only issuer");
         require(_remainingCoupons > 0, "Financial bond: no coupons available");
         require(block.timestamp >= this.nextCoupon(), "Financial bond: not time to pay next coupon");
 
-        uint256 couponAmount = _denomination / 10000 * _couponRate;
+        uint256 couponAmount;
+
+        if (_remainingCoupons > 1) {
+            couponAmount = _faceValue / 10000 * _couponRate;
+        }
+        else {
+            couponAmount = _faceValue / 10000 * _couponRate + _faceValue;
+        }
+
         require(msg.value == couponAmount * _totalSupply, "Financial bond: msg.value does not match total coupon amount");
 
         address[] memory _investors = investors();
@@ -117,7 +134,11 @@ contract FinancialBond is InvestorsStorage, FinancialBondMetadata, IFinancialBon
         _previousCoupon = this.nextCoupon();
         --_remainingCoupons;
 
-        emit CouponPayment(_couponRate, _denomination, _totalSupply);
+        emit CouponPayment(_couponRate, _faceValue, _totalSupply);
+
+        if (_remainingCoupons == 0) {
+            _isMatured = true;
+        }
 
         return true;
     }
